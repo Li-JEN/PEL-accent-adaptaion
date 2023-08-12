@@ -7,10 +7,16 @@ The code of "Parameter-Efficient Learning for Text-to-Speech Accent Adaptation"
 ```sh
 $ sudo apt-get install cmake
 $ sudo apt-get install sox
+$ sudo apt-get install zip
 $ git clone https://github.com/Li-JEN/PEL-accent-adaptaion.git
-$ cd tools
+$ cd PEL-accent-adaptaion/tools
 $ ./setup_anaconda.sh miniconda espnet 3.8
+$ ./activate_python.sh
 $ make TH_VERSION=1.10.1 CUDA_VERSION=11.3
+$ pip install pyopenjtalk
+$ pip install typeguard==2.13.3
+$ pip install Pillow==9.5.0
+$ pip install numpy==1.23.0
 ```
 - For more detail installation, please refer to this [link](https://espnet.github.io/espnet/installation.html)
 
@@ -19,9 +25,20 @@ $ make TH_VERSION=1.10.1 CUDA_VERSION=11.3
 ```sh
 $ cd egs2/jvs/tts1
 ```
-- Please follow the tutorial of egs2/jvs/tts1 to prepare required files. 
-- You may need run the adaptation with AR model (Tacotron) to bulid the teacher model for duration or checkout the newest ESPnet for integration with [MFA](https://github.com/espnet/espnet/blob/master/egs2/ljspeech/tts1/local/run_mfa.sh)
-
+- Please follow the [tutorial](https://github.com/espnet/espnet/blob/master/egs2/jvs/tts1/README.md) of egs2/jvs/tts1 to prepare required files. 
+- You may need run the adaptation with AR model (Tacotron) to bulid the teacher model for preparing duration feature or checkout the newest ESPnet for integration with [MFA](https://github.com/espnet/espnet/blob/master/egs2/TEMPLATE/tts1/README.md#1-data-preparation)
+- You need to make sure you are able to implement vanilla fine-tuning with Fastspeech2 First
+```sh
+ ./run.sh \
+    --stage 5 \
+    --g2p pyopenjtalk_accent_with_pause \
+    --write_collected_feats true \
+    --teacher_dumpdir exp/tts_finetune_tacotron2_raw_phn_jaconv_pyopenjtalk_accent_with_pause/decode_use_teacher_forcingtrue_train.loss.ave \
+    --tts_stats_dir exp/tts_finetune_tacotron2_raw_phn_jaconv_pyopenjtalk_accent_with_pause/decode_use_teacher_forcingtrue_train.loss.ave/stats \
+    --train_config conf/tuning/finetune_fastspeech2.yaml \
+    --train_args "--init_param downloads/0293a01e429a84a604304bf06f2cc0b0/exp/tts_train_fastspeech2_tacotron2_teacher_raw_phn_jaconv_pyopenjtalk_accent_with_pause/train.loss.ave_5best.pth:tts:tts" \
+    --tag finetune_fastspeech2_raw_phn_jaconv_pyopenjtalk_accent_with_pause
+```
 - To implement PETL:
 ```sh
 $ ./run.sh \

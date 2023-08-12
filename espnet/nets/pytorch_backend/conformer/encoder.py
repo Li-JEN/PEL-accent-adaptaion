@@ -357,15 +357,10 @@ class Encoder(torch.nn.Module):
             torch.Tensor: Mask tensor (#batch, 1, time).
 
         """
-        latent_feature = []
         if isinstance(self.embed, (Conv2dSubsampling, VGG2L)):
             xs, masks = self.embed(xs, masks)
         else:
             xs = self.embed(xs)
-        if isinstance(xs, tuple):
-            latent_feature+=[xs[0]]
-        else:
-            latent_feature+=[xs]
         if self.use_reprogram:
             if isinstance(xs, tuple):
                 x, pos_emb =xs[0], xs[1]
@@ -375,10 +370,6 @@ class Encoder(torch.nn.Module):
                 x = xs
                 x = self.add_reprogram(x,masks)
                 xs = x
-            if isinstance(xs, tuple):
-                latent_feature+=[xs[0]]
-            else:
-                latent_feature+=[xs]
         if self.intermediate_layers is None:
             # xs, masks = self.encoders(xs, masks)
             if self.use_reprogram and self.use_latent_reprogram:
@@ -387,15 +378,11 @@ class Encoder(torch.nn.Module):
                     if layer_idx != len(self.encoders) - 1:
                         if isinstance(xs, tuple):
                             x, pos_emb =xs[0], xs[1]
-                            latent_feature+=[x]
                             x = self.sp_layers[layer_idx](x)
-                            latent_feature+=[x]
                             xs = (x,pos_emb)
                         else:
                             x = xs
-                            latent_feature+=[x]
                             x = self.sp_layers[layer_idx](x)
-                            latent_feature+=[x]
                             xs = x
             elif self.use_reprogram and not self.use_latent_reprogram:
                 xs, masks = self.encoders(xs, masks)
@@ -404,15 +391,11 @@ class Encoder(torch.nn.Module):
                     xs, masks = encoder_layer(xs, masks)
                     if isinstance(xs, tuple):
                         x, pos_emb =xs[0], xs[1]
-                        latent_feature+=[x]
                         x = self.adapters[layer_idx](x)
-                        latent_feature+=[x]
                         xs = (x,pos_emb)
                     else:
                         x = xs
-                        latent_feature+=[x]
                         x = self.adapters[layer_idx](x)
-                        latent_feature+=[x]
                         xs = x
             else:
                 # xs, masks = self.encoders(xs, masks)
@@ -457,4 +440,4 @@ class Encoder(torch.nn.Module):
 
         if self.intermediate_layers is not None:
             return xs, masks, intermediate_outputs
-        return xs, masks, latent_feature
+        return xs, masks

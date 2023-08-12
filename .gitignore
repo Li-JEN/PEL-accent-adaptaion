@@ -87,9 +87,9 @@ tools/anaconda
 tools/ice-g2p*
 tools/fairseq*
 tools/featbin*
+tools/miniconda*
+tools/Miniconda3-latest-Linux-x86_64.sh
 *.zip
 *.zip.1
 *.pth
-egs2/chatbot/tts1/G2PWModel/*
 *.tar.gz
-egs2/chatbot/

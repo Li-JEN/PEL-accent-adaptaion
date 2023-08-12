@@ -502,8 +502,7 @@ class FastSpeech2(AbsTTS):
 
         # define criterions
         self.criterion = FastSpeech2Loss(
-            use_masking=use_masking, use_weighted_masking=use_weighted_masking, use_mmd=use_mmd, use_swd= use_swd, use_l2=use_l2
-        )
+            use_masking=use_masking, use_weighted_masking=use_weighted_masking)
 
     def forward(
         self,
@@ -566,7 +565,7 @@ class FastSpeech2(AbsTTS):
         olens = feats_lengths
 
         # forward propagation
-        before_outs, after_outs, d_outs, p_outs, e_outs, latent_features = self._forward(
+        before_outs, after_outs, d_outs, p_outs, e_outs = self._forward(
             xs,
             ilens,
             ys,
@@ -590,42 +589,20 @@ class FastSpeech2(AbsTTS):
             after_outs = None
 
         # calculate loss
-        if pair is None:
-            l1_loss, duration_loss, pitch_loss, energy_loss = self.criterion(
-                after_outs=after_outs,
-                before_outs=before_outs,
-                d_outs=d_outs,
-                p_outs=p_outs,
-                e_outs=e_outs,
-                ys=ys,
-                ds=ds,
-                ps=ps,
-                es=es,
-                ilens=ilens,
-                olens=olens,
-            )
-            wd_loss = 0
-        else:
-            l1_loss, duration_loss, pitch_loss, energy_loss, wd_loss = self.criterion(
-                after_outs=after_outs,
-                before_outs=before_outs,
-                d_outs=d_outs,
-                p_outs=p_outs,
-                e_outs=e_outs,
-                ys=ys,
-                ds=ds,
-                ps=ps,
-                es=es,
-                ilens=ilens,
-                olens=olens,
-                pair = pair,
-                pair_lens = pair_lengths,
-                latent = latent_features,
-                use_adapter = self.use_adapter,
-                use_mmd= self.use_mmd,
-                use_swd= self.use_swd,
-                use_l2 = self.use_l2
-            )
+       
+        l1_loss, duration_loss, pitch_loss, energy_loss = self.criterion(
+            after_outs=after_outs,
+            before_outs=before_outs,
+            d_outs=d_outs,
+            p_outs=p_outs,
+            e_outs=e_outs,
+            ys=ys,
+            ds=ds,
+            ps=ps,
+            es=es,
+            ilens=ilens,
+            olens=olens,
+        )
         loss = l1_loss + duration_loss + pitch_loss + energy_loss
 
         stats = dict(
@@ -633,7 +610,7 @@ class FastSpeech2(AbsTTS):
             duration_loss=duration_loss.item(),
             pitch_loss=pitch_loss.item(),
             energy_loss=energy_loss.item(),
-            wd_loss=wd_loss.item() if pair is not None else 0
+            wd_loss=0
         )
 
         # report extra information
@@ -672,7 +649,7 @@ class FastSpeech2(AbsTTS):
     ) -> Sequence[torch.Tensor]:
         # forward encoder
         x_masks = self._source_mask(ilens)
-        hs, _, _ = self.encoder(xs, x_masks)  # (B, T_text, adim)
+        hs, _ = self.encoder(xs, x_masks)  # (B, T_text, adim)
 
         # integrate with GST
         if self.use_gst:
@@ -751,7 +728,7 @@ class FastSpeech2(AbsTTS):
             h_masks = self._source_mask(olens_in)
         else:
             h_masks = None
-        zs, _ , latent_feature = self.decoder(hs, h_masks)  # (B, T_feats, adim)
+        zs, _ = self.decoder(hs, h_masks)  # (B, T_feats, adim)
         before_outs = self.feat_out(zs).view(
             zs.size(0), -1, self.odim
         )  # (B, T_feats, odim)
@@ -764,7 +741,7 @@ class FastSpeech2(AbsTTS):
                 before_outs.transpose(1, 2)
             ).transpose(1, 2)
 
-        return before_outs, after_outs, d_outs, p_outs, e_outs, latent_feature
+        return before_outs, after_outs, d_outs, p_outs, e_outs
 
     def inference(
         self,
