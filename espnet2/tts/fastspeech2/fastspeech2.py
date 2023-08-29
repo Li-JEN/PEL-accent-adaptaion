@@ -796,7 +796,7 @@ class FastSpeech2(AbsTTS):
         if use_teacher_forcing:
             # use groundtruth of duration, pitch, and energy
             ds, ps, es = d.unsqueeze(0), p.unsqueeze(0), e.unsqueeze(0)
-            _, outs, d_outs, p_outs, e_outs,  latent_feats = self._forward(
+            _, outs, d_outs, p_outs, e_outs = self._forward(
                 xs,
                 ilens,
                 ys,
@@ -808,7 +808,7 @@ class FastSpeech2(AbsTTS):
                 lids=lids,
             )  # (1, T_feats, odim)
         else:
-            _, outs, d_outs, p_outs, e_outs, latent_feats = self._forward(
+            _, outs, d_outs, p_outs, e_outs = self._forward(
                 xs,
                 ilens,
                 ys,
@@ -824,7 +824,7 @@ class FastSpeech2(AbsTTS):
             duration=d_outs[0],
             pitch=p_outs[0],
             energy=e_outs[0],
-            latent_feats = latent_feats
+            latent_feats = []
         )
 
     def _integrate_with_spk_embed(
